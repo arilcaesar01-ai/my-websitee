@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NutriKu - Kalkulator Gizi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f9f4;
+      margin: 0; padding: 0;
+      text-align: center;
+    }
+    header {
+      background: #4CAF50;
+      color: white;
+      padding: 15px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+    }
+    .hidden {
+      display: none;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #3e8e41;
+    }
+    input, select {
+      margin: 8px 0;
+      padding: 10px;
+      width: 90%;
+      max-width: 320px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .result-box {
+      background: #e9f7ef;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<header>🍎 NutriKu</header>
+
+<!-- Halaman Menu -->
+<div id="menu" class="container">
+  <h2>Selamat datang di NutriKu</h2>
+  <p>Aplikasi sederhana untuk merencanakan pola makan sehatmu.</p>
+  <button onclick="showForm()">Hitung IMT</button>
+</div>
+
+<!-- Halaman Input -->
+<div id="form" class="container hidden">
+  <h2>Hitung IMT & Kebutuhan Energi</h2>
+  <input type="number" id="usia" placeholder="Usia (tahun)" required><br>
+  <select id="gender">
+    <option value="wanita">Wanita</option>
+    <option value="pria">Pria</option>
+  </select><br>
+  <input type="number" id="bb" placeholder="Berat badan (kg)" required><br>
+  <input type="number" id="tb" placeholder="Tinggi badan (cm)" required><br>
+  <button onclick="hitung()">Hitung</button>
+</div>
+
+<!-- Halaman Hasil -->
+<div id="hasil" class="container hidden">
+  <h2>Hasil Perhitungan</h2>
+  <div class="result-box">
+    <p id="imt"></p>
+    <p id="status"></p>
+    <p id="kalori"></p>
+  </div>
+  <button onclick="kembali()">Kembali ke Menu</button>
+</div>
+
+<script>
+function showForm() {
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("form").classList.remove("hidden");
+}
+
+function kembali() {
+  document.getElementById("hasil").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
+}
+
+function hitung() {
+  let usia = parseInt(document.getElementById("usia").value);
+  let gender = document.getElementById("gender").value;
+  let bb = parseFloat(document.getElementById("bb").value);
+  let tb = parseFloat(document.getElementById("tb").value);
+
+  if (isNaN(usia) || isNaN(bb) || isNaN(tb)) {
+    alert("Mohon isi semua data!");
+    return;
+  }
+
+  // Konversi tinggi ke meter untuk IMT
+  let tbMeter = tb / 100;
+  let imt = bb / (tbMeter * tbMeter);
+
+  // Tentukan status gizi
+  let status = "";
+  if (imt < 18.5) status = "Underweight";
+  else if (imt >= 18.5 && imt <= 24.9) status = "Normal";
+  else if (imt >= 25 && imt <= 29.9) status = "Overweight";
+  else if (imt >= 30) status = "Obesitas";
+
+  // Hitung kebutuhan energi Harris-Benedict
+  let kalori = 0;
+  if (gender === "wanita") {
+    kalori = 655.1 + (9.56 * bb) + (1.85 * tb) - (46.8 * usia);
+  } else {
+    kalori = 88.362 + (13.397 * bb) + (4.799 * tb) - (5.677 * usia);
+  }
+
+  // Tampilkan hasil
+  document.getElementById("form").classList.add("hidden");
+  document.getElementById("hasil").classList.remove("hidden");
+  document.getElementById("imt").innerHTML = "IMT kamu: <b>" + imt.toFixed(2) + "</b>";
+  document.getElementById("status").innerHTML = "Status Gizi: <b>" + status + "</b>";
+  document.getElementById("kalori").innerHTML = "Kebutuhan Energi: <b>" + kalori.toFixed(0) + " kkal/hari</b>";
+}
+</script>
+
+</body>
+</html>
