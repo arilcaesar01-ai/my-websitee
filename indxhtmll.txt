@@ -1,0 +1,200 @@
+import React, { useState } from "react";
+
+// NutriKu - Single-file React component
+// Usage: paste into a create-react-app project's App.jsx or similar.
+// Styling expects Tailwind CSS available in the project.
+
+export default function NutriKuApp() {
+  const [page, setPage] = useState("menu");
+  const [age, setAge] = useState(20);
+  const [gender, setGender] = useState("female");
+  const [weight, setWeight] = useState(60); // kg
+  const [height, setHeight] = useState(165); // cm
+  const [results, setResults] = useState(null);
+
+  function calcBMI(w, hCm) {
+    const h = hCm / 100; // m
+    const bmi = w / (h * h);
+    return Number(bmi.toFixed(2));
+  }
+
+  function harrisBenedict(age, gender, weight, heightCm) {
+    // Use the exact coefficients the user provided (converted to dot decimals)
+    // female: 655.1 + 9.56*BBI + 1.85*TB - 46.8*U
+    // male: 88.362 + 13.397*BBI + 4.799*TB - 5.677*U
+    if (gender === "female") {
+      return 655.1 + 9.56 * weight + 1.85 * heightCm - 46.8 * age;
+    }
+    return 88.362 + 13.397 * weight + 4.799 * heightCm - 5.677 * age;
+  }
+
+  function bmiStatus(bmi) {
+    if (bmi < 18.5) return "Underweight";
+    if (bmi >= 18.5 && bmi <= 24.9) return "Normal";
+    if (bmi >= 25 && bmi <= 29.9) return "Overweight";
+    return "Obesitas"; // 30 - 34 (user mentioned until 34)
+  }
+
+  function calcMacros(totalKcal) {
+    // carbs 60%, fat 25%, protein 15%
+    const carbsKcal = totalKcal * 0.6;
+    const fatKcal = totalKcal * 0.25;
+    const proteinKcal = totalKcal * 0.15;
+
+    const carbsGram = Math.round(carbsKcal / 4);
+    const proteinGram = Math.round(proteinKcal / 4);
+    const fatGram = Math.round(fatKcal / 9);
+
+    return {
+      totalKcal: Math.round(totalKcal),
+      carbsKcal: Math.round(carbsKcal),
+      fatKcal: Math.round(fatKcal),
+      proteinKcal: Math.round(proteinKcal),
+      carbsGram,
+      proteinGram,
+      fatGram,
+    };
+  }
+
+  function generateDailyMenu(kcal, proteinGr, carbsGr, fatGr) {
+    // Split energy across meals: breakfast 25%, snack1 10%, lunch 30%, snack2 10%, dinner 25%
+    const split = { breakfast: 0.25, snack1: 0.1, lunch: 0.3, snack2: 0.1, dinner: 0.25 };
+    const daily = {};
+    Object.entries(split).forEach(([k, v]) => {
+      const kc = Math.round(kcal * v);
+      const carbs = Math.round(carbsGr * v);
+      const prot = Math.round(proteinGr * v);
+      const fat = Math.round(fatGr * v);
+      // Simple example menu items approximated to match kcals and macros
+      let menu = [];
+      switch (k) {
+        case "breakfast":
+          menu = [
+            { name: "Nasi + telur dadar (1 porsi)", weight: "200 g", note: "beras 150 g cooked" },
+            { name: "Sayur bayam (1 porsi)", weight: "50 g" },
+            { name: "Tempe panggang (50 g)", weight: "50 g" },
+          ];
+          break;
+        case "snack1":
+          menu = [
+            { name: "Roti gandum 1 slice + selai kacang 1 sdt", weight: "40 g" },
+          ];
+          break;
+        case "lunch":
+          menu = [
+            { name: "Nasi + ayam panggang", weight: "250 g (nasi+protein)" },
+            { name: "Tumis sayur campur", weight: "100 g" },
+            { name: "Sambal tomat kecil", weight: "20 g" },
+          ];
+          break;
+        case "snack2":
+          menu = [
+            { name: "Yogurt polos 150 g", weight: "150 g" },
+          ];
+          break;
+        case "dinner":
+          menu = [
+            { name: "Sup sayur + tahu", weight: "300 g" },
+            { name: "Nasi sedikit (100 g cooked)", weight: "100 g" },
+          ];
+          break;
+        default:
+          menu = [];
+      }
+
+      daily[k] = { kcal: kc, carbs, prot, fat, menu };
+    });
+
+    return daily;
+  }
+
+  function handleCalculate() {
+    const bmi = calcBMI(weight, height);
+    const status = bmiStatus(bmi);
+    const bmr = harrisBenedict(age, gender, weight, height);
+    // Note: Harris-Benedict gives BMR; activity factor isn't provided by user; we will treat this as estimated daily energy requirement (BMR) for simplicity.
+    const macros = calcMacros(bmr);
+    const dailyMenu = generateDailyMenu(macros.totalKcal, macros.proteinGram, macros.carbsGram, macros.fatGram);
+
+    setResults({ bmi, status, bmr: Math.round(bmr), macros, dailyMenu });
+    setPage("results");
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-emerald-50 p-6">
+      <div className="max-w-3xl mx-auto bg-white/80 backdrop-blur-md rounded-2xl shadow-lg overflow-hidden">
+        <header className="p-6 flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-green-400 to-emerald-600 flex items-center justify-center text-white text-2xl">🥗</div>
+          <div>
+            <h1 className="text-2xl font-bold">NutriKu</h1>
+            <p className="text-sm text-slate-600">Teman sehatmu untuk hidup lebih seimbang.</p>
+          </div>
+        </header>
+
+        <main className="p-6">
+          {page === "menu" && (
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Menu Utama</h2>
+              <p className="mb-4">Pilih fitur untuk memulai:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  onClick={() => setPage("input")}
+                  className="p-4 rounded-xl shadow hover:scale-[1.01] transition-transform bg-white flex flex-col gap-2"
+                >
+                  <div className="text-2xl">📊</div>
+                  <div className="font-semibold">Hitung IMT & Kebutuhan Energi</div>
+                  <div className="text-sm text-slate-500">Isi usia, jenis kelamin, berat, tinggi lalu tekan Hitung</div>
+                </button>
+
+                <button
+                  onClick={() => setPage("macros")}
+                  className="p-4 rounded-xl shadow hover:scale-[1.01] transition-transform bg-white flex flex-col gap-2"
+                >
+                  <div className="text-2xl">🍽️</div>
+                  <div className="font-semibold">Kebutuhan Zat Gizi Makro</div>
+                  <div className="text-sm text-slate-500">Lihat pembagian karbohidrat, lemak, protein</div>
+                </button>
+
+                <button
+                  onClick={() => setPage("sampleMenu")}
+                  className="p-4 rounded-xl shadow hover:scale-[1.01] transition-transform bg-white flex flex-col gap-2"
+                >
+                  <div className="text-2xl">📅</div>
+                  <div className="font-semibold">Contoh Menu Sehari</div>
+                  <div className="text-sm text-slate-500">Menu sarapan hingga makan malam sesuai kebutuhan</div>
+                </button>
+
+                <button
+                  onClick={() => alert('Fitur tips gizi sementara hanya demo.')} 
+                  className="p-4 rounded-xl shadow hover:scale-[1.01] transition-transform bg-white flex flex-col gap-2"
+                >
+                  <div className="text-2xl">📖</div>
+                  <div className="font-semibold">Tips Gizi & Resep</div>
+                  <div className="text-sm text-slate-500">Resep sehat mudah dimasak</div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {page === "input" && (
+            <div>
+              <button onClick={() => setPage("menu")} className="text-sm text-slate-500 mb-3">← Kembali</button>
+              <h2 className="text-xl font-semibold mb-3">Input Data</h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="flex flex-col">
+                  <span className="text-sm">Usia (tahun)</span>
+                  <input type="number" value={age} onChange={(e)=>setAge(Number(e.target.value))} className="p-2 rounded-md border" />
+                </label>
+
+                <label className="flex flex-col">
+                  <span className="text-sm">Jenis Kelamin</span>
+                  <select value={gender} onChange={(e)=>setGender(e.target.value)} className="p-2 rounded-md border">
+                    <option value="female">Perempuan</option>
+                    <option value="male">Laki-laki</option>
+                  </select>
+                </label>
+
+                <label className="flex flex-col">
+                  <span className="text-sm">Berat Badan (kg)</span>
+                  <input type="number" value={weight} onChange={(e
